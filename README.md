@@ -9,7 +9,8 @@ It's a Progressive Web App (PWA): it runs in any browser, can be installed on a 
 
 | Area | What's included |
 |---|---|
-| Start | No sign-in — the app opens straight to Home. Your name and photo are set on the Profile screen |
+| Start | No sign-in needed — the app opens straight to Home. Your name and photo are set on the Profile screen |
+| Sync | Optional: sign in with Google or email in *Settings → Sync across devices* to keep the same tasks on all your devices (Firebase — see [SETUP-FIREBASE.md](SETUP-FIREBASE.md)) |
 | Tasks | Add, edit, delete, mark done; date, time, notes, high priority; repeat daily / weekly / monthly / yearly |
 | Search | Search titles, notes and categories, with status, day and category filters |
 | Reminders | Notifications before a task (at time, 5 min … 1 day before) plus a sound; birthday reminders on the day |
@@ -42,7 +43,11 @@ sw.js                   service worker: offline cache, notification clicks
 css/app.css             all styles (colors are CSS variables)
 js/app.js               router + startup
 js/db.js                IndexedDB wrapper (the browser's built-in database)
-js/store.js             your tasks and settings, saved in IndexedDB ← swap for a backend here
+js/store.js             your tasks and settings, saved in IndexedDB
+js/sync.js              sync engine: copies changes between this device and the cloud
+js/cloud.js             backend connector — the only file that talks to Firebase
+js/firebase-config.js   your Firebase project settings (null = sync off)
+js/vendor/firebase.js   Firebase SDK, bundled by tools/build-firebase.sh
 js/i18n.js              all the app's text (English)
 js/reminders.js         reminder scheduler
 js/voice.js             speech input + "tomorrow at 6 pm" parsing
@@ -52,11 +57,10 @@ js/views/*.js           one file per screen
 
 ## Good to know
 
-- **Data lives in the browser's built-in database (IndexedDB)**, in a database named `daynest` (the app's original working name, kept so existing data isn't lost). There's no sign-in: each device keeps one personal set of tasks. Devices that had an account in earlier versions keep that account's tasks and name automatically. Inspect it in DevTools → Application → IndexedDB. Use *Settings → Back up data* to move to another device.
+- **Data lives in the browser's built-in database (IndexedDB)**, in a database named `daynest` (the app's original working name, kept so existing data isn't lost). Without signing in, each device keeps its own tasks; sign in to sync them through Firebase (see [SETUP-FIREBASE.md](SETUP-FIREBASE.md)). Devices that had an account in earlier versions keep that account's tasks and name automatically. Inspect it in DevTools → Application → IndexedDB. Use *Settings → Back up data* to move to another device.
 - **Reminders** fire while the app is open or running in the background. A website can't wake itself when the browser is fully closed — that needs a push server.
 
 ## Next steps
 
-1. Sync across devices: replace the functions in `js/store.js` with Firebase + Firestore (or Supabase).
-2. Reminders when the app is closed: add Web Push with a small server or Firebase Cloud Messaging.
-3. Native Android/iOS home-screen widgets: wrap the app with Capacitor.
+1. Reminders when the app is closed: add Web Push with a small server or Firebase Cloud Messaging.
+2. Native Android/iOS home-screen widgets: wrap the app with Capacitor.

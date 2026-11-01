@@ -1,10 +1,11 @@
 // Remind Myself — app entry: routing, global actions, startup.
 import * as store from './store.js';
 import { t, lang } from './i18n.js';
-import { toast } from './util.js';
 import { toggleFromUI, shareText } from './ui.js';
 import * as reminders from './reminders.js';
 import { registerSW, checkForUpdate } from './pwa.js';
+import * as sync from './sync.js';
+import { createBackend } from './cloud.js';
 
 import home from './views/home.js';
 import tasks from './views/tasks.js';
@@ -45,6 +46,8 @@ export function render({ keepScroll = false } = {}) {
   if (!store.data()) return;   // still opening the database; startup will render
   const { view, params, query } = resolve();
   const scroll = keepScroll ? window.scrollY : 0;
+  const focused = document.activeElement?.id && document.activeElement.matches('input,textarea') ? document.activeElement : null;
+  const caret = focused ? [focused.id, focused.selectionStart, focused.selectionEnd] : null;
   const page = view(params, query);
   // A fresh root each time so old event listeners are dropped.
   const root = document.createElement('div'); root.id = 'app';
@@ -56,6 +59,7 @@ export function render({ keepScroll = false } = {}) {
   bindGlobal(root);
   page.mount?.(root, () => render({ keepScroll: true }));
   window.scrollTo(0, scroll);
+  if (caret) { const el = document.getElementById(caret[0]); if (el) { el.focus(); try { el.setSelectionRange(caret[1], caret[2]); } catch {} } }
 }
 
 function bindGlobal(root) {
@@ -84,6 +88,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && current?.live && !document.querySelector('dialog[open]')) render({ keepScroll: true });
 });
 store.onChange(() => { if (current?.live && !document.querySelector('dialog[open]')) render({ keepScroll: true }); });
+sync.onStatus(() => { if (current?.syncAware && !document.querySelector('dialog[open]')) render({ keepScroll: true }); });
 
 // Notification click (from the service worker) → open the app on Home.
 navigator.serviceWorker?.addEventListener('message', e => { if (e.data?.type === 'open') location.hash = e.data.hash || '#/home'; });
@@ -99,5 +104,5 @@ try {
 if (!location.hash) history.replaceState(null, '', '#/home');
 render();
 reminders.start();
+sync.start(createBackend);   // optional cloud sync (does nothing until Firebase is set up)
 registerSW().then(() => setTimeout(() => checkForUpdate(false), 4000));
-if (!window.isSecureContext) toast('Open over https:// for sign-in to work.');

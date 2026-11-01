@@ -6,6 +6,7 @@ import { layout, catName } from '../ui.js';
 import { TONES, playTone } from '../sound.js';
 import { notificationState, askPermission } from '../reminders.js';
 import { VERSION, checkForUpdate } from '../pwa.js';
+import * as sync from '../sync.js';
 
 const COLORS = ['#2f6f5e', '#4c7bd9', '#7a5bc7', '#d14d7a', '#d9822b', '#c9a227', '#3e9a62', '#2b8fb3', '#b4483a', '#5b6470'];
 const EMOJIS = ['🙂', '💼', '🛒', '💪', '📚', '🎂', '⭐', '🏠', '🍳', '🧹', '💊', '🙏', '🎮', '✈️', '💰', '🐾', '🎨', '🏷️'];
@@ -131,6 +132,8 @@ export function settingsPage() {
   const select = (key, opts, val) => `<select class="input" data-key="${key}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
 
   const body = `
+  ${syncSection(row)}
+
   <div class="section-title"><h2>${t('set.general')}</h2></div>
   <div class="list">
     ${row(t('set.dateFormat'), select('dateFormat', ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'D MMM YYYY'].map(f => [f, fmtDate(sample, f)]), s.dateFormat))}
@@ -165,7 +168,7 @@ export function settingsPage() {
   </div>`;
 
   return {
-    title: t('menu.settings'),
+    title: t('menu.settings'), syncAware: true,
     html: layout(t('menu.settings'), body, back),
     mount(root, rerender) {
       root.addEventListener('change', async e => {
@@ -193,9 +196,91 @@ export function settingsPage() {
           if (p) { p.prompt(); window.__installPrompt = null; } else toast(t('set.installHint'));
         }
         if (a === 'update') checkForUpdate(true);
-        if (a === 'reset' && await confirmBox(t('set.confirmReset'), t('delete'), t('cancel'))) { await store.resetAll(); toast(t('set.resetDone')); location.hash = '#/home'; }
+        if (a === 'reset' && await confirmBox(t(sync.isSignedIn() ? 'set.confirmResetSynced' : 'set.confirmReset'), t('delete'), t('cancel'))) { await store.resetAll(); toast(t('set.resetDone')); location.hash = '#/home'; }
+        if (a === 'sync-google') runAuth(() => sync.signInGoogle());
+        if (a === 'sync-email') emailDialog();
+        if (a === 'sync-retry') location.reload();
+        if (a === 'sync-signout' && await confirmBox(t('sync.confirmSignOut'), t('sync.signOut'), t('cancel'))) {
+          await sync.signOut(); toast(t('sync.signedOut')); location.hash = '#/home';
+        }
       });
     },
   };
 }
 
+
+/* ---------------- Sync across devices ---------------- */
+function syncSection(row) {
+  const st = sync.getStatus();
+  const head = `<div class="section-title"><h2>${t('sync.title')}</h2></div>`;
+  if (st.state === 'loading') return '';
+  if (st.state === 'unconfigured') {
+    return head + `<div class="list">${row(`☁️ ${t('sync.notSetUp')}`, '', t('sync.notSetUpSub'))}</div>`;
+  }
+  if (!st.user) {
+    if (st.state === 'error' && st.error === 'load') {
+      return head + `<div class="list">${row(`⚠️ ${t('sync.loadFailed')}`, `<button class="btn sm" data-action="sync-retry">${t('sync.retry')}</button>`)}</div>`;
+    }
+    return head + `<div class="card stack">
+      <p class="small muted" style="margin:0">${t('sync.pitch')}</p>
+      <button class="btn block" data-action="sync-google"><span style="font-weight:800;color:#4285f4">G</span>${t('sync.google')}</button>
+      <button class="btn block" data-action="sync-email">${icon('chat')}${t('sync.email')}</button>
+    </div>`;
+  }
+  const label = { syncing: `🔄 ${t('sync.syncing')}`, synced: `✅ ${t('sync.synced')}`, offline: `📴 ${t('sync.offline')}`, error: `⚠️ ${t('sync.error')}` }[st.state] || '';
+  const when = st.state === 'synced' && st.at ? t('sync.at', { time: new Date(st.at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) }) : (st.state === 'error' ? t('sync.willRetry') : '');
+  return head + `<div class="list">
+    ${row(`<b>${esc(st.user.email || st.user.name)}</b>`, '', t('sync.signedInAs'))}
+    ${row(label, '', when)}
+    ${row(t('sync.signOut'), `<button class="btn sm" data-action="sync-signout">${t('sync.signOut')}</button>`, t('sync.signOutSub'))}
+  </div>`;
+}
+
+const AUTH_ERRORS = {
+  'auth/invalid-credential': 'sync.errLogin', 'auth/wrong-password': 'sync.errLogin', 'auth/user-not-found': 'sync.errLogin',
+  'auth/invalid-email': 'sync.errEmail', 'auth/email-already-in-use': 'sync.errTaken', 'auth/weak-password': 'sync.errWeak',
+  'auth/popup-closed-by-user': 'sync.errClosed', 'auth/cancelled-popup-request': 'sync.errClosed', 'auth/popup-blocked': 'sync.errPopup',
+  'auth/network-request-failed': 'sync.errNetwork', 'auth/too-many-requests': 'sync.errTooMany',
+  'auth/unauthorized-domain': 'sync.errSetup', 'auth/operation-not-allowed': 'sync.errSetup',
+};
+const authMessage = e => t(AUTH_ERRORS[e?.code] || 'sync.errGeneric');
+
+async function runAuth(fn) {
+  try { await fn(); toast(t('sync.signedIn')); return null; }
+  catch (e) { const m = authMessage(e); if (e?.code !== 'auth/popup-closed-by-user') toast(m); return m; }
+}
+
+function emailDialog() {
+  const dlg = document.createElement('dialog');
+  dlg.innerHTML = `<form class="card stack" novalidate>
+    <h3>${t('sync.email')}</h3>
+    <p class="small muted" style="margin:0">${t('sync.emailSub')}</p>
+    <label class="field"><span>${t('sync.emailLabel')}</span><input class="input" type="email" name="email" required autocomplete="email"></label>
+    <label class="field"><span>${t('sync.password')}</span><input class="input" type="password" name="pw" required minlength="6" autocomplete="current-password"></label>
+    <p class="error" role="alert"></p>
+    <button class="btn primary block" value="in">${t('sync.signIn')}</button>
+    <button class="btn block" value="up">${t('sync.create')}</button>
+    <div class="row"><button type="button" class="btn sm" data-forgot>${t('sync.forgot')}</button><span class="spacer"></span><button type="button" class="btn sm" data-close>${t('cancel')}</button></div>
+  </form>`;
+  document.body.appendChild(dlg); dlg.showModal();
+  const f = dlg.querySelector('form'); const err = f.querySelector('.error');
+  const close = () => { dlg.close(); dlg.remove(); };
+  dlg.addEventListener('cancel', () => dlg.remove());
+  dlg.querySelector('[data-close]').onclick = close;
+  dlg.querySelector('[data-forgot]').onclick = async () => {
+    if (!f.email.value.trim()) { err.textContent = t('sync.errEmail'); return; }
+    try { await sync.resetPassword(f.email.value.trim()); err.textContent = ''; toast(t('sync.resetSent')); }
+    catch (e) { err.textContent = authMessage(e); }
+  };
+  f.addEventListener('submit', async e => {
+    e.preventDefault(); err.textContent = '';
+    const email = f.email.value.trim(), pw = f.pw.value;
+    if (!email) { err.textContent = t('sync.errEmail'); return; }
+    if (pw.length < 6) { err.textContent = t('sync.errWeak'); return; }
+    f.querySelectorAll('button').forEach(b => b.disabled = true);
+    try {
+      await (e.submitter?.value === 'up' ? sync.signUpEmail(email, pw) : sync.signInEmail(email, pw));
+      close(); toast(t('sync.signedIn'));
+    } catch (ex) { err.textContent = authMessage(ex); f.querySelectorAll('button').forEach(b => b.disabled = false); }
+  });
+}

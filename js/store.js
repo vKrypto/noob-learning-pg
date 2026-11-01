@@ -112,7 +112,7 @@ function freshData() {
   const today = todayISO();
   const sample = (title, category, time, repeat = 'none') => ({
     id: uid(), title, notes: '', category, date: today, time, reminder: 10, repeat,
-    done: false, completedAt: null, createdAt: Date.now(),
+    done: false, completedAt: null, createdAt: Date.now(), sample: true,   // starter example
   });
   return {
     version: 1,
@@ -164,7 +164,7 @@ export function saveTask(input) {
   if (!clean.title) throw new Error('err.title');
   if (input.id) {
     const t = getTask(input.id); if (!t) throw new Error('err.notFound');
-    Object.assign(t, clean, { updatedAt: Date.now() });
+    Object.assign(t, clean, { updatedAt: Date.now() }); delete t.sample;
   } else {
     d.tasks.push({ id: uid(), ...clean, done: false, completedAt: null, createdAt: Date.now() });
   }
@@ -178,14 +178,14 @@ export function deleteTask(id) {
 /** Toggle done. Completing a repeating task schedules the next one. */
 export function toggleTask(id) {
   const t = getTask(id); if (!t) return null;
-  t.done = !t.done; t.completedAt = t.done ? Date.now() : null;
+  t.done = !t.done; t.completedAt = t.done ? Date.now() : null; t.updatedAt = Date.now(); delete t.sample;
   let next = null;
   if (t.done && t.repeat && t.repeat !== 'none' && !t.spawnedNext) {
     const step = { daily: d => addDays(d, 1), weekly: d => addDays(d, 7), monthly: d => addMonths(d, 1), yearly: d => addMonths(d, 12) }[t.repeat];
     if (step) {
       let date = step(t.date);
       while (date < todayISO()) date = step(date);   // skip missed days
-      next = { ...t, id: uid(), date, done: false, completedAt: null, createdAt: Date.now(), spawnedNext: false };
+      next = { ...t, id: uid(), date, done: false, completedAt: null, createdAt: Date.now(), updatedAt: Date.now(), spawnedNext: false };
       data().tasks.push(next); t.spawnedNext = true;
     }
   }
