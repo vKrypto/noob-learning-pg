@@ -59,7 +59,7 @@ export default function calendar(params) {
         if (b.dataset.month) { selected = addMonths(selected.slice(0, 8) + '01', Number(b.dataset.month)); history.replaceState(null, '', `#/calendar/${selected}`); rerender(); }
         if (b.dataset.action === 'ics') {
           const list = d.tasks.filter(x => !x.done && x.date >= today);
-          downloadICS(list.length ? list : d.tasks, 'daynest-tasks.ics');
+          downloadICS(list.length ? list : d.tasks, 'remind-myself-tasks.ics');
         }
       });
     },

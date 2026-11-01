@@ -80,8 +80,8 @@ export default function home() {
   ${s.widgets.month ? monthWidget(d.tasks) : ''}`;
 
   return {
-    title: 'DayNest', live: true,
-    html: layout('DayNest', body, { tab: 'home' }),
+    title: 'Remind Myself', live: true,
+    html: layout('Remind Myself', body, { tab: 'home' }),
     mount(root, rerender) {
       root.addEventListener('click', async e => {
         const a = e.target.closest('[data-action]')?.dataset.action;

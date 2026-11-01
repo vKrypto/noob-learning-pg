@@ -190,7 +190,7 @@ export function settingsPage() {
         const a = e.target.closest('[data-action]')?.dataset.action;
         if (a === 'play') playTone(s.tone);
         if (a === 'perm') { await askPermission(); rerender(); }
-        if (a === 'export') download(`daynest-backup-${todayISO()}.json`, store.exportData(), 'application/json');
+        if (a === 'export') download(`remind-myself-backup-${todayISO()}.json`, store.exportData(), 'application/json');
         if (a === 'install') {
           const p = window.__installPrompt;
           if (p) { p.prompt(); window.__installPrompt = null; } else toast(t('set.installHint'));

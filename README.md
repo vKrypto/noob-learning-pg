@@ -1,4 +1,4 @@
-# DayNest — Daily Task Organizer
+# Remind Myself — Daily Task Organizer
 
 A daily task and reminder app for people who keep forgetting their plans but want an organized routine.
 It's a Progressive Web App (PWA): it runs in any browser, can be installed on a phone's home screen, and works offline.
@@ -52,7 +52,7 @@ js/views/*.js           one file per screen
 
 ## Good to know
 
-- **Data lives in the browser's built-in database (IndexedDB).** GitHub Pages only hosts static files, so there's no server. Accounts (`users`), each user's tasks/settings (`userdata`) and the session (`meta`) are object stores in the `daynest` database; you can inspect them in DevTools → Application → IndexedDB. Data saved by version 1.0 in localStorage is moved over automatically. Only two tiny device preferences (theme and the sign-in page language) stay in localStorage so the page can paint instantly. Use *Settings → Back up data* to move to another device.
+- **Data lives in the browser's built-in database (IndexedDB).** GitHub Pages only hosts static files, so there's no server. Accounts (`users`), each user's tasks/settings (`userdata`) and the session (`meta`) are object stores in the `daynest` database (the app's original working name — kept so existing data isn't lost); you can inspect them in DevTools → Application → IndexedDB. Data saved by version 1.0 in localStorage is moved over automatically. Only two tiny device preferences (theme and the sign-in page language) stay in localStorage so the page can paint instantly. Use *Settings → Back up data* to move to another device.
 - **Reminders** fire while the app is open or running in the background. A website can't wake itself when the browser is fully closed — that needs a push server.
 
 ## Next steps

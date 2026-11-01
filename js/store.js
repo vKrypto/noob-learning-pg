@@ -38,7 +38,7 @@ let users = [];          // all accounts on this device
 let sessionId = null;    // signed-in user id
 let cache = null;        // signed-in user's data
 
-const logErr = e => { console.error('DayNest database error', e); return false; };
+const logErr = e => { console.error('Remind Myself database error', e); return false; };
 const putUser = u => db.put('users', u).then(() => true, logErr);
 const putSession = id => db.put('meta', { key: 'session', value: id }).then(() => true, logErr);
 
@@ -261,11 +261,11 @@ export function deleteBirthday(id) { const d = data(); d.birthdays = d.birthdays
 
 /* ---------- backup ---------- */
 export function exportData() {
-  const d = data(); return JSON.stringify({ app: 'DayNest', exportedAt: new Date().toISOString(), ...d }, null, 2);
+  const d = data(); return JSON.stringify({ app: 'Remind Myself', exportedAt: new Date().toISOString(), ...d }, null, 2);
 }
 export function importData(json) {
   const parsed = JSON.parse(json);
-  if (!parsed || parsed.app !== 'DayNest' || !Array.isArray(parsed.tasks)) throw new Error('err.badBackup');
+  if (!parsed || !['Remind Myself', 'Remind Myself'].includes(parsed.app) || !Array.isArray(parsed.tasks)) throw new Error('err.badBackup');
   const d = data();
   for (const k of ['tasks', 'categories', 'birthdays', 'profile', 'settings', 'feedback']) if (parsed[k]) d[k] = parsed[k];
   save();

@@ -16,7 +16,7 @@ const en = {
 
   'nav.home': 'Home', 'nav.tasks': 'Tasks', 'nav.calendar': 'Calendar', 'nav.reports': 'Reports', 'nav.profile': 'Profile',
   'menu.categories': 'Categories', 'menu.theme': 'Theme', 'menu.birthdays': "Birthday countdown", 'menu.share': 'Share app',
-  'menu.feedback': 'Feedback', 'menu.settings': 'Settings', 'menu.logout': 'Log out', 'menu.logoutConfirm': 'Log out of DayNest?',
+  'menu.feedback': 'Feedback', 'menu.settings': 'Settings', 'menu.logout': 'Log out', 'menu.logoutConfirm': 'Log out of Remind Myself?',
 
   'home.morning': 'Good morning', 'home.afternoon': 'Good afternoon', 'home.evening': 'Good evening',
   'home.progress': '{done} of {total} tasks done today', 'home.nothingToday': 'No tasks for today yet',
@@ -73,11 +73,11 @@ const en = {
 
   'set.general': 'General', 'set.dateFormat': 'Date format', 'set.weekStart': 'Calendar: week starts on', 'set.calendarSub': 'Used by Calendar and weekly reports',
   'set.monday': 'Monday', 'set.sunday': 'Sunday', 'set.language': 'Language',
-  'set.reminders': 'Reminders & sound', 'set.notifications': 'Notifications', 'set.notifSub': 'Reminders show while DayNest is open or installed',
+  'set.reminders': 'Reminders & sound', 'set.notifications': 'Notifications', 'set.notifSub': 'Reminders show while Remind Myself is open or installed',
   'set.notifDenied': 'Blocked — allow notifications in your browser settings', 'set.notifUnsupported': 'This browser cannot show notifications',
   'set.defaultReminder': 'Default reminder', 'set.tone': 'Task completion tone', 'set.preview': 'Play',
   'set.widgets': 'Widgets', 'set.widgetSub': 'Shown on the Home screen', 'set.homescreen': 'Add to phone home screen',
-  'set.homescreenSub': 'Install DayNest like an app', 'set.install': 'Install',
+  'set.homescreenSub': 'Install Remind Myself like an app', 'set.install': 'Install',
   'set.installHint': 'Use your browser menu → "Add to Home screen" / "Install app".',
   'set.data': 'Your data', 'set.backup': 'Back up data', 'set.backupSub': 'Download a file to move to another device', 'set.restore': 'Restore from backup',
   'set.restored': 'Backup restored', 'set.password': 'Change password', 'set.oldPw': 'Current password',
@@ -85,16 +85,16 @@ const en = {
   'set.about': 'About', 'set.update': 'App updates', 'set.check': 'Check', 'set.version': 'Version {v}',
 
   'tone.chime': 'Chime', 'tone.bell': 'Bell', 'tone.pop': 'Pop', 'tone.none': 'Silent',
-  'update.ready': 'A new version of DayNest is ready.', 'update.reload': 'Update now', 'update.later': 'Later',
+  'update.ready': 'A new version of Remind Myself is ready.', 'update.reload': 'Update now', 'update.later': 'Later',
   'update.latest': "You're on the latest version.", 'update.offline': "Couldn't check — you seem to be offline.", 'update.unavailable': 'Updates work once the app is installed or opened online.',
 
-  'share.appText': 'I organize my daily tasks with DayNest — reminders, birthdays and reports. Try it:', 'share.via': 'shared from DayNest',
+  'share.appText': 'I organize my daily tasks with Remind Myself — reminders, birthdays and reports. Try it:', 'share.via': 'shared from Remind Myself',
   'share.failed': "Couldn't share on this device",
 
   'err.name': 'Please enter your name.', 'err.email': 'Please enter a valid email.', 'err.passwordShort': 'Password must be at least 6 characters.',
   'err.emailTaken': 'An account with this email already exists on this device.', 'err.badLogin': 'Email or password is incorrect.',
   'err.mismatch': "Passwords don't match.", 'err.title': 'Please enter a task title.', 'err.notFound': 'Task not found',
-  'err.required': 'Please fill in all fields.', 'err.badBackup': "That file isn't a DayNest backup.", 'err.image': "Couldn't read that image.",
+  'err.required': 'Please fill in all fields.', 'err.badBackup': "That file isn't a Remind Myself backup.", 'err.image': "Couldn't read that image.",
   'err.storage': 'Storage is full — try a smaller photo.', 'err.noVoice': 'Voice input is not supported in this browser.',
   'err.micBlocked': 'Microphone is blocked. Allow it in browser settings.', 'err.voiceFailed': "Didn't catch that — please try again.",
 };
@@ -111,7 +111,7 @@ const hi = {
 
   'nav.home': 'होम', 'nav.tasks': 'काम', 'nav.calendar': 'कैलेंडर', 'nav.reports': 'रिपोर्ट', 'nav.profile': 'प्रोफ़ाइल',
   'menu.categories': 'श्रेणियाँ', 'menu.theme': 'थीम', 'menu.birthdays': 'जन्मदिन काउंटडाउन', 'menu.share': 'ऐप शेयर करें',
-  'menu.feedback': 'प्रतिक्रिया', 'menu.settings': 'सेटिंग्स', 'menu.logout': 'लॉग आउट', 'menu.logoutConfirm': 'DayNest से लॉग आउट करें?',
+  'menu.feedback': 'प्रतिक्रिया', 'menu.settings': 'सेटिंग्स', 'menu.logout': 'लॉग आउट', 'menu.logoutConfirm': 'Remind Myself से लॉग आउट करें?',
 
   'home.morning': 'सुप्रभात', 'home.afternoon': 'नमस्कार', 'home.evening': 'शुभ संध्या',
   'home.progress': 'आज {total} में से {done} काम पूरे', 'home.nothingToday': 'आज के लिए अभी कोई काम नहीं',
@@ -168,11 +168,11 @@ const hi = {
 
   'set.general': 'सामान्य', 'set.dateFormat': 'तारीख़ का प्रारूप', 'set.weekStart': 'कैलेंडर: हफ़्ता शुरू', 'set.calendarSub': 'कैलेंडर और साप्ताहिक रिपोर्ट में',
   'set.monday': 'सोमवार', 'set.sunday': 'रविवार', 'set.language': 'भाषा',
-  'set.reminders': 'रिमाइंडर और ध्वनि', 'set.notifications': 'सूचनाएँ', 'set.notifSub': 'DayNest खुला या इंस्टॉल होने पर रिमाइंडर दिखते हैं',
+  'set.reminders': 'रिमाइंडर और ध्वनि', 'set.notifications': 'सूचनाएँ', 'set.notifSub': 'Remind Myself खुला या इंस्टॉल होने पर रिमाइंडर दिखते हैं',
   'set.notifDenied': 'बंद है — ब्राउज़र सेटिंग्स में अनुमति दें', 'set.notifUnsupported': 'यह ब्राउज़र सूचनाएँ नहीं दिखा सकता',
   'set.defaultReminder': 'डिफ़ॉल्ट रिमाइंडर', 'set.tone': 'काम पूरा होने की ध्वनि', 'set.preview': 'बजाएँ',
   'set.widgets': 'विजेट', 'set.widgetSub': 'होम स्क्रीन पर दिखेगा', 'set.homescreen': 'फ़ोन की होम स्क्रीन पर जोड़ें',
-  'set.homescreenSub': 'DayNest को ऐप की तरह इंस्टॉल करें', 'set.install': 'इंस्टॉल',
+  'set.homescreenSub': 'Remind Myself को ऐप की तरह इंस्टॉल करें', 'set.install': 'इंस्टॉल',
   'set.installHint': 'ब्राउज़र मेनू → "होम स्क्रीन पर जोड़ें" / "ऐप इंस्टॉल करें"।',
   'set.data': 'आपका डेटा', 'set.backup': 'डेटा का बैकअप', 'set.backupSub': 'दूसरे डिवाइस पर ले जाने के लिए फ़ाइल डाउनलोड करें', 'set.restore': 'बैकअप से वापस लाएँ',
   'set.restored': 'बैकअप वापस आ गया', 'set.password': 'पासवर्ड बदलें', 'set.oldPw': 'मौजूदा पासवर्ड',
@@ -180,16 +180,16 @@ const hi = {
   'set.about': 'जानकारी', 'set.update': 'ऐप अपडेट', 'set.check': 'जाँचें', 'set.version': 'संस्करण {v}',
 
   'tone.chime': 'झंकार', 'tone.bell': 'घंटी', 'tone.pop': 'पॉप', 'tone.none': 'शांत',
-  'update.ready': 'DayNest का नया संस्करण तैयार है।', 'update.reload': 'अभी अपडेट करें', 'update.later': 'बाद में',
+  'update.ready': 'Remind Myself का नया संस्करण तैयार है।', 'update.reload': 'अभी अपडेट करें', 'update.later': 'बाद में',
   'update.latest': 'आप नवीनतम संस्करण पर हैं।', 'update.offline': 'जाँच नहीं हो सकी — आप ऑफ़लाइन लगते हैं।', 'update.unavailable': 'ऐप ऑनलाइन खुलने पर अपडेट काम करेंगे।',
 
-  'share.appText': 'मैं DayNest से अपने रोज़ के काम व्यवस्थित करता/करती हूँ — रिमाइंडर, जन्मदिन और रिपोर्ट। आज़माएँ:', 'share.via': 'DayNest से शेयर किया',
+  'share.appText': 'मैं Remind Myself से अपने रोज़ के काम व्यवस्थित करता/करती हूँ — रिमाइंडर, जन्मदिन और रिपोर्ट। आज़माएँ:', 'share.via': 'Remind Myself से शेयर किया',
   'share.failed': 'इस डिवाइस पर शेयर नहीं हो सका',
 
   'err.name': 'कृपया अपना नाम लिखें।', 'err.email': 'कृपया सही ईमेल लिखें।', 'err.passwordShort': 'पासवर्ड कम से कम 6 अक्षर का हो।',
   'err.emailTaken': 'इस ईमेल से इस डिवाइस पर पहले से खाता है।', 'err.badLogin': 'ईमेल या पासवर्ड ग़लत है।',
   'err.mismatch': 'पासवर्ड मेल नहीं खाते।', 'err.title': 'कृपया काम का नाम लिखें।', 'err.notFound': 'काम नहीं मिला',
-  'err.required': 'कृपया सभी जानकारी भरें।', 'err.badBackup': 'यह DayNest बैकअप फ़ाइल नहीं है।', 'err.image': 'यह फ़ोटो पढ़ी नहीं जा सकी।',
+  'err.required': 'कृपया सभी जानकारी भरें।', 'err.badBackup': 'यह Remind Myself बैकअप फ़ाइल नहीं है।', 'err.image': 'यह फ़ोटो पढ़ी नहीं जा सकी।',
   'err.storage': 'जगह भर गई — छोटी फ़ोटो आज़माएँ।', 'err.noVoice': 'इस ब्राउज़र में आवाज़ से लिखना उपलब्ध नहीं।',
   'err.micBlocked': 'माइक्रोफ़ोन बंद है। ब्राउज़र सेटिंग्स में अनुमति दें।', 'err.voiceFailed': 'सुनाई नहीं दिया — फिर से कोशिश करें।',
 };

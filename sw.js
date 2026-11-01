@@ -1,6 +1,6 @@
-// DayNest service worker: offline support + notification clicks.
+// Remind Myself service worker: offline support + notification clicks.
 // Bump CACHE when you release a new version (keep in sync with VERSION in js/pwa.js).
-const CACHE = 'daynest-v1.1.0';
+const CACHE = 'remind-myself-v1.2.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/util.js', './js/store.js', './js/i18n.js', './js/ui.js', './js/sound.js', './js/quotes.js',

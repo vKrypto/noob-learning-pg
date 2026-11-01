@@ -1,6 +1,6 @@
 {
-  "name": "DayNest — Daily Task Organizer",
-  "short_name": "DayNest",
+  "name": "Remind Myself — Daily Task Organizer",
+  "short_name": "Remind Myself",
   "description": "Organize your daily tasks, reminders, birthdays and routines.",
   "start_url": "./#/home",
   "scope": "./",

@@ -1,5 +1,5 @@
 // Reminder scheduler.
-// While DayNest is open (or installed and running in the background tab), it
+// While Remind Myself is open (or installed and running in the background tab), it
 // checks every 20 seconds for tasks whose reminder time has arrived and shows a
 // system notification. Browsers do not allow a static website to wake itself up
 // when fully closed; that needs a push server (see README → "Next steps").

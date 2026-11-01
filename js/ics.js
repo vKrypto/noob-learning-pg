@@ -10,7 +10,7 @@ const RRULE = { daily: 'DAILY', weekly: 'WEEKLY', monthly: 'MONTHLY', yearly: 'Y
 function nextDay(iso) { const [y, m, d] = iso.split('-').map(Number); const x = new Date(y, m - 1, d + 1); return `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}`; }
 
 function event(task) {
-  const lines = ['BEGIN:VEVENT', `UID:${task.id}@daynest`, `DTSTAMP:${utcStamp(new Date())}`, `SUMMARY:${escICS(task.title)}`];
+  const lines = ['BEGIN:VEVENT', `UID:${task.id}@remind-myself`, `DTSTAMP:${utcStamp(new Date())}`, `SUMMARY:${escICS(task.title)}`];
   if (task.time) {
     const start = taskDateTime(task); const end = new Date(start.getTime() + 30 * 60000);
     lines.push(`DTSTART:${utcStamp(start)}`, `DTEND:${utcStamp(end)}`);
@@ -27,11 +27,11 @@ function event(task) {
 }
 
 export function buildICS(tasks) {
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DayNest//Tasks//EN', 'CALSCALE:GREGORIAN',
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Remind Myself//Tasks//EN', 'CALSCALE:GREGORIAN',
     ...tasks.flatMap(event), 'END:VCALENDAR'].join('\r\n');
 }
 
-export function downloadICS(tasks, filename = 'daynest-tasks.ics') {
+export function downloadICS(tasks, filename = 'remind-myself-tasks.ics') {
   download(filename.replace(/[\\/:*?"<>|]/g, '_'), buildICS(tasks), 'text/calendar');
 }
 

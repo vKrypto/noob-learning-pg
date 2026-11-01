@@ -28,7 +28,7 @@ export function openDB() {
       resolve(db);
     };
     req.onerror = () => reject(req.error);
-    req.onblocked = () => console.warn('DayNest database upgrade is waiting for other tabs to close');
+    req.onblocked = () => console.warn('Remind Myself database upgrade is waiting for other tabs to close');
   });
   return dbPromise;
 }

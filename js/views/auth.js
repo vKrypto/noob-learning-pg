@@ -6,7 +6,7 @@ import { quoteOfDay } from '../quotes.js';
 function shell(inner) {
   const q = quoteOfDay();
   return `<div class="auth"><div class="card">
-    <div class="brand"><img src="icons/icon.svg" alt=""><div><h1>DayNest</h1><div class="small muted">${t('app.tagline')}</div></div></div>
+    <div class="brand"><img src="icons/icon.svg" alt=""><div><h1 style="text-transform:uppercase;letter-spacing:.04em;font-size:1.35rem">Remind Myself</h1><div class="small muted">${t('app.tagline')}</div></div></div>
     ${inner}
     <p class="small muted" style="margin:22px 0 0;text-align:center">“${esc(lang() === 'hi' ? q.hi : q.en)}”</p>
     <div class="row" style="justify-content:center;margin-top:10px">

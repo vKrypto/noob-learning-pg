@@ -1,4 +1,4 @@
-// DayNest — app entry: routing, global actions, startup.
+// Remind Myself — app entry: routing, global actions, startup.
 import * as store from './store.js';
 import { t, lang } from './i18n.js';
 import { toast, confirmBox } from './util.js';
@@ -56,7 +56,7 @@ export function render({ keepScroll = false } = {}) {
   const root = document.createElement('div'); root.id = 'app';
   root.innerHTML = page.html;
   document.getElementById('app').replaceWith(root);
-  document.title = `${page.title} · DayNest`;
+  document.title = page.title === 'Remind Myself' ? page.title : `${page.title} · Remind Myself`;
   document.documentElement.lang = lang();
   current = page;
   bindGlobal(root);
@@ -76,7 +76,7 @@ function bindGlobal(root) {
     if (a === 'open' && id) location.hash = `#/task/${id}`;
     if (a === 'share-app') {
       document.body.classList.remove('drawer-open');
-      shareText('DayNest', t('share.appText'), location.origin + location.pathname);
+      shareText('Remind Myself', t('share.appText'), location.origin + location.pathname);
     }
     if (a === 'logout') {
       document.body.classList.remove('drawer-open');
@@ -106,7 +106,7 @@ try {
   await store.init();   // load accounts and data from IndexedDB
 } catch (e) {
   console.error(e);
-  document.getElementById('app').innerHTML = '<div class="auth"><div class="card"><h2>Storage unavailable</h2><p class="muted">DayNest needs the browser database (IndexedDB). It may be blocked in private browsing — please open DayNest in a normal window.</p></div></div>';
+  document.getElementById('app').innerHTML = '<div class="auth"><div class="card"><h2>Storage unavailable</h2><p class="muted">Remind Myself needs the browser database (IndexedDB). It may be blocked in private browsing — please open Remind Myself in a normal window.</p></div></div>';
   throw e;
 }
 if (!location.hash) history.replaceState(null, '', store.currentUser() ? '#/home' : '#/signin');
