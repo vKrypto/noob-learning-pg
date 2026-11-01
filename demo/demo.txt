@@ -1,0 +1,4 @@
+Hello from Claude!
+
+This demo file was created in Claude's Linux cloud VM and pushed to
+vKrypto/noob-learning-pg to confirm repo access works.
