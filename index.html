@@ -20,12 +20,17 @@
     h1 { font-size: 2rem; margin: 0 0 .5rem; }
     p { color: var(--muted); line-height: 1.5; }
     code { color: var(--accent); }
+    .wave { font-size: 3rem; margin: 0; display: inline-block; animation: wave 2s ease-in-out infinite; transform-origin: 70% 70%; }
+    @keyframes wave { 0%, 60%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(14deg); } 20% { transform: rotate(-8deg); } }
+    @media (prefers-reduced-motion: reduce) { .wave { animation: none; } }
   </style>
 </head>
 <body>
   <main>
-    <h1>noob-learning-pg</h1>
-    <p>Demo page deployed to GitHub Pages with GitHub Actions.</p>
+    <p class="wave">👋</p>
+    <h1>Hello, World!</h1>
+    <p>Welcome to <strong>noob-learning-pg</strong> — a demo page deployed to GitHub Pages with GitHub Actions.</p>
+    <p>If you can read this, the build-and-deploy pipeline is working end to end.</p>
     <p>Edit <code>index.html</code> and push to <code>main</code> to update this site.</p>
   </main>
 </body>
