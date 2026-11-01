@@ -41,7 +41,8 @@ manifest.webmanifest    install info (name, icons)
 sw.js                   service worker: offline cache, notification clicks
 css/app.css             all styles (colors are CSS variables)
 js/app.js               router + startup
-js/store.js             accounts and data (localStorage) ← swap for a backend here
+js/db.js                IndexedDB wrapper (the browser's built-in database)
+js/store.js             accounts and data, saved in IndexedDB ← swap for a backend here
 js/i18n.js              English + Hindi text
 js/reminders.js         reminder scheduler
 js/voice.js             speech input + "tomorrow at 6 pm" parsing
@@ -51,7 +52,7 @@ js/views/*.js           one file per screen
 
 ## Good to know
 
-- **Data lives on the device.** GitHub Pages only hosts static files, so there's no server. Each account and its tasks are stored in that browser. Use *Settings → Back up data* to move to another device.
+- **Data lives in the browser's built-in database (IndexedDB).** GitHub Pages only hosts static files, so there's no server. Accounts (`users`), each user's tasks/settings (`userdata`) and the session (`meta`) are object stores in the `daynest` database; you can inspect them in DevTools → Application → IndexedDB. Data saved by version 1.0 in localStorage is moved over automatically. Only two tiny device preferences (theme and the sign-in page language) stay in localStorage so the page can paint instantly. Use *Settings → Back up data* to move to another device.
 - **Reminders** fire while the app is open or running in the background. A website can't wake itself when the browser is fully closed — that needs a push server.
 
 ## Next steps

@@ -197,7 +197,7 @@ export function settingsPage() {
         }
         if (a === 'update') checkForUpdate(true);
         if (a === 'pw') passwordDialog();
-        if (a === 'delacc' && await confirmBox(t('set.confirmDelete'), t('delete'), t('cancel'))) { store.deleteAccount(); location.hash = '#/signin'; }
+        if (a === 'delacc' && await confirmBox(t('set.confirmDelete'), t('delete'), t('cancel'))) { await store.deleteAccount(); location.hash = '#/signin'; }
       });
     },
   };

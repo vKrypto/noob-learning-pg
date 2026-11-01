@@ -1,16 +1,17 @@
-// Accounts + per-user data, stored in this browser's localStorage.
+// Accounts + per-user data, stored in the browser's built-in database (IndexedDB).
 //
 // NOTE: This app runs on GitHub Pages (static hosting), so there is no server.
 // Accounts live on the user's device; passwords are never stored, only a
 // PBKDF2 hash. To sync across devices, swap the functions in this file for
 // calls to a backend (e.g. Firebase Auth + Firestore) — the rest of the app
 // only talks to the exported functions below.
+//
+// How it works: init() loads the users and the signed-in user's data from
+// IndexedDB into memory once at startup, so screens can read synchronously.
+// Every change is written back to IndexedDB straight away.
 
 import { uid, todayISO, addDays, addMonths } from './util.js';
-
-const USERS_KEY = 'dn.users';
-const SESSION_KEY = 'dn.session';
-const dataKey = id => `dn.data.${id}`;
+import * as db from './db.js';
 
 export const DEFAULT_CATEGORIES = [
   { id: 'personal', color: '#4c7bd9', emoji: '🙂' },
@@ -32,13 +33,51 @@ export const DEFAULT_SETTINGS = {
   notifications: true,
 };
 
-/* ---------- small storage wrappers ---------- */
-function read(key, fallback) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+/* ---------- in-memory copies of what's in IndexedDB ---------- */
+let users = [];          // all accounts on this device
+let sessionId = null;    // signed-in user id
+let cache = null;        // signed-in user's data
+
+const logErr = e => { console.error('DayNest database error', e); return false; };
+const putUser = u => db.put('users', u).then(() => true, logErr);
+const putSession = id => db.put('meta', { key: 'session', value: id }).then(() => true, logErr);
+
+/** Load everything needed to start. Call once before the first render. */
+export async function init() {
+  await migrateFromLocalStorage();
+  users = await db.getAll('users');
+  sessionId = (await db.get('meta', 'session'))?.value || null;
+  if (sessionId && !users.some(u => u.id === sessionId)) sessionId = null;
+  if (sessionId) await loadData(sessionId);
+  db.requestPersistence();
 }
-function write(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-  catch (e) { console.error('Storage full or unavailable', e); return false; }
+
+async function loadData(id) {
+  const rec = await db.get('userdata', id);
+  const d = rec?.value || freshData();
+  d.settings = { ...structuredClone(DEFAULT_SETTINGS), ...d.settings, widgets: { ...DEFAULT_SETTINGS.widgets, ...(d.settings?.widgets || {}) } };
+  d.birthdays ||= []; d.feedback ||= []; d.notified ||= {}; d.profile ||= { photo: null, slogan: '' };
+  Object.defineProperty(d, '_id', { value: id, enumerable: false });
+  cache = d;
+  if (!rec) await db.put('userdata', { userId: id, value: d });
+}
+
+/** Version 1.0.0 kept data in localStorage. Move it into IndexedDB once, then remove it. */
+async function migrateFromLocalStorage() {
+  let old;
+  try { old = JSON.parse(localStorage.getItem('dn.users') || 'null'); } catch { old = null; }
+  if (!Array.isArray(old)) return;
+  for (const u of old) {
+    if (!(await db.getByIndex('users', 'email', u.email))) await db.put('users', u);
+    const raw = localStorage.getItem(`dn.data.${u.id}`);
+    if (raw && !(await db.get('userdata', u.id))) await db.put('userdata', { userId: u.id, value: JSON.parse(raw) });
+    localStorage.removeItem(`dn.data.${u.id}`);
+  }
+  try {
+    const s = JSON.parse(localStorage.getItem('dn.session') || 'null');
+    if (s?.userId) await db.put('meta', { key: 'session', value: s.userId });
+  } catch {}
+  localStorage.removeItem('dn.users'); localStorage.removeItem('dn.session');
 }
 
 /* ---------- password hashing (PBKDF2, Web Crypto) ---------- */
@@ -59,50 +98,53 @@ export async function signUp({ name, email, password }) {
   if (!name) throw new Error('err.name');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('err.email');
   if (String(password).length < 6) throw new Error('err.passwordShort');
-  const users = read(USERS_KEY, []);
-  if (users.some(u => u.email === email)) throw new Error('err.emailTaken');
+  if (await db.getByIndex('users', 'email', email)) throw new Error('err.emailTaken');
   const { salt, hash } = await hashPassword(password);
   const user = { id: uid(), name, email, salt, hash, createdAt: Date.now() };
-  users.push(user); write(USERS_KEY, users);
-  write(dataKey(user.id), freshData(name));
-  write(SESSION_KEY, { userId: user.id });
+  await db.put('users', user);            // unique email index guards against duplicates
+  users.push(user);
+  await loadData(user.id);                // creates the starter data
+  sessionId = user.id; await putSession(user.id);
   return publicUser(user);
 }
 
 export async function signIn({ email, password }) {
   email = normEmail(email);
-  const user = read(USERS_KEY, []).find(u => u.email === email);
+  const user = await db.getByIndex('users', 'email', email);
   if (!user) throw new Error('err.badLogin');
   const { hash } = await hashPassword(password, user.salt);
   if (hash !== user.hash) throw new Error('err.badLogin');
-  write(SESSION_KEY, { userId: user.id });
+  if (!users.some(u => u.id === user.id)) users.push(user);
+  await loadData(user.id);
+  sessionId = user.id; await putSession(user.id);
   return publicUser(user);
 }
 
 export async function changePassword(oldPw, newPw) {
-  const users = read(USERS_KEY, []); const u = users.find(x => x.id === currentUserId());
+  const u = users.find(x => x.id === sessionId);
   if (!u) throw new Error('err.badLogin');
   if ((await hashPassword(oldPw, u.salt)).hash !== u.hash) throw new Error('err.badLogin');
   if (String(newPw).length < 6) throw new Error('err.passwordShort');
-  Object.assign(u, await hashPassword(newPw)); write(USERS_KEY, users);
+  Object.assign(u, await hashPassword(newPw)); await putUser(u);
 }
 
-export function signOut() { localStorage.removeItem(SESSION_KEY); cache = null; }
+export function signOut() { sessionId = null; cache = null; db.del('meta', 'session').catch(logErr); }
 
-export function deleteAccount() {
-  const id = currentUserId(); if (!id) return;
-  write(USERS_KEY, read(USERS_KEY, []).filter(u => u.id !== id));
-  localStorage.removeItem(dataKey(id)); signOut();
+export async function deleteAccount() {
+  const id = sessionId; if (!id) return;
+  users = users.filter(u => u.id !== id);
+  signOut();
+  await Promise.all([db.del('users', id), db.del('userdata', id)]).catch(logErr);
 }
 
-export function currentUserId() { return read(SESSION_KEY, null)?.userId || null; }
+export function currentUserId() { return sessionId; }
 export function currentUser() {
-  const id = currentUserId(); const u = id && read(USERS_KEY, []).find(x => x.id === id);
+  const u = sessionId && users.find(x => x.id === sessionId);
   return u ? publicUser(u) : null;
 }
 export function renameUser(name) {
-  const users = read(USERS_KEY, []); const u = users.find(x => x.id === currentUserId());
-  if (u && name.trim()) { u.name = name.trim(); write(USERS_KEY, users); }
+  const u = users.find(x => x.id === sessionId);
+  if (u && name.trim()) { u.name = name.trim(); putUser(u); }
 }
 const publicUser = u => ({ id: u.id, name: u.name, email: u.email, createdAt: u.createdAt });
 
@@ -113,6 +155,8 @@ function freshData() {
     id: uid(), title, notes: '', category, date: today, time, reminder: 10, repeat,
     done: false, completedAt: null, createdAt: Date.now(),
   });
+  let language = 'en';
+  try { language = localStorage.getItem('dn.lang') || 'en'; } catch {}
   return {
     version: 1,
     tasks: [
@@ -123,34 +167,26 @@ function freshData() {
     categories: DEFAULT_CATEGORIES.map(c => ({ ...c })),
     birthdays: [],
     profile: { photo: null, slogan: '' },
-    settings: { ...structuredClone(DEFAULT_SETTINGS), language: localStorage.getItem('dn.lang') || 'en' },
+    settings: { ...structuredClone(DEFAULT_SETTINGS), language },
     feedback: [],
     notified: {},      // reminder keys already shown
   };
 }
 
-let cache = null;
 const listeners = new Set();
 export function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-export function data() {
-  const id = currentUserId(); if (!id) return null;
-  if (!cache || cache._id !== id) {
-    const d = read(dataKey(id), null) || freshData();
-    d.settings = { ...structuredClone(DEFAULT_SETTINGS), ...d.settings, widgets: { ...DEFAULT_SETTINGS.widgets, ...(d.settings?.widgets || {}) } };
-    d.birthdays ||= []; d.feedback ||= []; d.notified ||= {}; d.profile ||= { photo: null, slogan: '' };
-    Object.defineProperty(d, '_id', { value: id, enumerable: false });
-    cache = d;
-  }
-  return cache;
-}
+export function data() { return sessionId && cache?._id === sessionId ? cache : null; }
+
+/** Write the current user's data to IndexedDB. Resolves true when saved. */
 export function save() {
-  const d = data(); if (!d) return false;
-  const ok = write(dataKey(d._id), d);
+  const d = data(); if (!d) return Promise.resolve(false);
+  const done = db.put('userdata', { userId: d._id, value: d }).then(() => true, logErr);
   listeners.forEach(fn => fn());
-  return ok;
+  return done;
 }
 export const settings = () => data()?.settings || DEFAULT_SETTINGS;
+
 
 /* ---------- tasks ---------- */
 export function getTask(id) { return data().tasks.find(t => t.id === id); }

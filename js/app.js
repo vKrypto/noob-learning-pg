@@ -102,6 +102,13 @@ store.onChange(() => { if (current?.live && !document.querySelector('dialog[open
 navigator.serviceWorker?.addEventListener('message', e => { if (e.data?.type === 'open') location.hash = e.data.hash || '#/home'; });
 
 /* ---------- start ---------- */
+try {
+  await store.init();   // load accounts and data from IndexedDB
+} catch (e) {
+  console.error(e);
+  document.getElementById('app').innerHTML = '<div class="auth"><div class="card"><h2>Storage unavailable</h2><p class="muted">DayNest needs the browser database (IndexedDB). It may be blocked in private browsing — please open DayNest in a normal window.</p></div></div>';
+  throw e;
+}
 if (!location.hash) history.replaceState(null, '', store.currentUser() ? '#/home' : '#/signin');
 render();
 if (store.currentUser()) reminders.start();

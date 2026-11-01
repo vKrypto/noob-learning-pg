@@ -2,7 +2,7 @@
 import { toast, confirmBox } from './util.js';
 import { t } from './i18n.js';
 
-export const VERSION = '1.0.0'; // keep in sync with CACHE in sw.js
+export const VERSION = '1.1.0'; // keep in sync with CACHE in sw.js
 
 let reg = null;
 

@@ -47,7 +47,7 @@ export default function profile() {
     mount(root) {
       $('#photo', root).addEventListener('change', async e => {
         const file = e.target.files[0]; if (!file) return;
-        try { d.profile.photo = await imageToDataURL(file); if (!store.save()) toast(t('err.storage')); }
+        try { d.profile.photo = await imageToDataURL(file); if (!(await store.save())) toast(t('err.storage')); }
         catch { toast(t('err.image')); }
       });
       $('#pf', root).addEventListener('submit', e => {

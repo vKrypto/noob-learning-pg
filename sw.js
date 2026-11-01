@@ -1,10 +1,10 @@
 // DayNest service worker: offline support + notification clicks.
 // Bump CACHE when you release a new version (keep in sync with VERSION in js/pwa.js).
-const CACHE = 'daynest-v1.0.0';
+const CACHE = 'daynest-v1.1.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/util.js', './js/store.js', './js/i18n.js', './js/ui.js', './js/sound.js', './js/quotes.js',
-  './js/voice.js', './js/reminders.js', './js/ics.js', './js/pwa.js',
+  './js/voice.js', './js/reminders.js', './js/ics.js', './js/pwa.js', './js/db.js',
   './js/views/auth.js', './js/views/home.js', './js/views/tasks.js', './js/views/taskForm.js', './js/views/calendar.js',
   './js/views/reports.js', './js/views/profile.js', './js/views/birthdays.js', './js/views/menu.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
