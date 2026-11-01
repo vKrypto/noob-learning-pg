@@ -23,12 +23,11 @@ export default function profile() {
     </label>
     ${d.profile.photo ? `<div><button class="btn sm" data-action="rmphoto" style="margin-top:10px">${t('profile.removePhoto')}</button></div>` : ''}
     <form id="pf" class="stack" style="text-align:left;margin-top:16px">
-      <label class="field"><span>${t('auth.name')}</span><input class="input" name="name" maxlength="60" value="${esc(u.name)}" required></label>
+      <label class="field"><span>${t('profile.name')}</span><input class="input" name="name" maxlength="60" value="${esc(u.name)}" autocomplete="name"></label>
       <label class="field"><span>${t('profile.slogan')}</span><input class="input" name="slogan" maxlength="120" value="${esc(d.profile.slogan)}" placeholder="${t('slogan.1')}" list="slogans"></label>
       <datalist id="slogans">${SLOGANS.map(k => `<option value="${esc(t(k))}">`).join('')}</datalist>
       <button class="btn primary block">${t('save')}</button>
     </form>
-    <p class="small muted" style="margin:10px 0 0">${esc(u.email)}</p>
   </section>
 
   <div class="section-title"><h2>${t('profile.todayDone')}</h2></div>

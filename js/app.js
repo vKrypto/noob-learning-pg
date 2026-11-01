@@ -1,12 +1,11 @@
 // Remind Myself — app entry: routing, global actions, startup.
 import * as store from './store.js';
 import { t, lang } from './i18n.js';
-import { toast, confirmBox } from './util.js';
+import { toast } from './util.js';
 import { toggleFromUI, shareText } from './ui.js';
 import * as reminders from './reminders.js';
 import { registerSW, checkForUpdate } from './pwa.js';
 
-import { signin, signup } from './views/auth.js';
 import home from './views/home.js';
 import tasks from './views/tasks.js';
 import taskForm from './views/taskForm.js';
@@ -16,7 +15,6 @@ import profile from './views/profile.js';
 import birthdays from './views/birthdays.js';
 import { categories, theme, feedback, settingsPage } from './views/menu.js';
 
-const PUBLIC = { signin, signup };
 const ROUTES = [
   [/^home$/, home], [/^tasks$/, tasks], [/^task\/([\w-]+)$/, taskForm, ['id']],
   [/^calendar(?:\/([\d-]+))?$/, calendar, ['date']], [/^reports$/, reports], [/^profile$/, profile],
@@ -34,12 +32,7 @@ function parseHash() {
 
 function resolve() {
   const { path, query } = parseHash();
-  const loggedIn = !!store.currentUser();
-  if (!loggedIn) {
-    if (!PUBLIC[path]) history.replaceState(null, '', '#/signin');
-    return { view: PUBLIC[path] || signin, params: {}, query };
-  }
-  if (PUBLIC[path] || !path) { history.replaceState(null, '', '#/home'); return { view: home, params: {}, query: {} }; }
+  if (!path) { history.replaceState(null, '', '#/home'); return { view: home, params: {}, query: {} }; }
   for (const [re, view, names = []] of ROUTES) {
     const m = path.match(re);
     if (m) return { view, params: Object.fromEntries(names.map((n, i) => [n, m[i + 1] && decodeURIComponent(m[i + 1])])), query };
@@ -49,6 +42,7 @@ function resolve() {
 }
 
 export function render({ keepScroll = false } = {}) {
+  if (!store.data()) return;   // still opening the database; startup will render
   const { view, params, query } = resolve();
   const scroll = keepScroll ? window.scrollY : 0;
   const page = view(params, query);
@@ -78,18 +72,11 @@ function bindGlobal(root) {
       document.body.classList.remove('drawer-open');
       shareText('Remind Myself', t('share.appText'), location.origin + location.pathname);
     }
-    if (a === 'logout') {
-      document.body.classList.remove('drawer-open');
-      if (await confirmBox(t('menu.logoutConfirm'), t('menu.logout'), t('cancel'))) {
-        reminders.stop(); store.signOut(); location.hash = '#/signin';
-      }
-    }
   });
 }
 
 window.addEventListener('hashchange', () => {
   document.body.classList.remove('drawer-open');
-  if (store.currentUser()) reminders.start(); else reminders.stop();
   render();
 });
 window.addEventListener('keydown', e => { if (e.key === 'Escape') document.body.classList.remove('drawer-open'); });
@@ -109,8 +96,8 @@ try {
   document.getElementById('app').innerHTML = '<div class="auth"><div class="card"><h2>Storage unavailable</h2><p class="muted">Remind Myself needs the browser database (IndexedDB). It may be blocked in private browsing — please open Remind Myself in a normal window.</p></div></div>';
   throw e;
 }
-if (!location.hash) history.replaceState(null, '', store.currentUser() ? '#/home' : '#/signin');
+if (!location.hash) history.replaceState(null, '', '#/home');
 render();
-if (store.currentUser()) reminders.start();
+reminders.start();
 registerSW().then(() => setTimeout(() => checkForUpdate(false), 4000));
 if (!window.isSecureContext) toast('Open over https:// for sign-in to work.');

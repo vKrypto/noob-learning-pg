@@ -13,7 +13,7 @@ export const fmtD = iso => fmtDate(iso, store.settings().dateFormat, lang());
 export function avatar(cls = '') {
   const u = store.currentUser(); const p = store.data()?.profile;
   if (p?.photo) return `<img class="avatar ${cls}" src="${esc(p.photo)}" alt="">`;
-  return `<span class="avatar ${cls}" aria-hidden="true">${esc((u?.name || '?').trim().charAt(0).toUpperCase())}</span>`;
+  return `<span class="avatar ${cls}" aria-hidden="true">${u?.name ? esc(u.name.trim().charAt(0).toUpperCase()) : '🙂'}</span>`;
 }
 
 const TABS = [
@@ -40,14 +40,13 @@ export function layout(title, body, opts = {}) {
   </div></nav>
   <div class="scrim" data-action="drawer-close"></div>
   <aside class="drawer" aria-label="${t('menu')}">
-    <div class="me">${avatar()}<div style="min-width:0"><b>${esc(u?.name)}</b><div class="small muted" style="overflow:hidden;text-overflow:ellipsis">${esc(u?.email)}</div></div></div>
+    <a class="me" href="#/profile" style="color:inherit;text-decoration:none">${avatar()}<div style="min-width:0"><b>${esc(u?.name || 'Remind Myself')}</b><div class="small muted">${t('nav.profile')}</div></div></a>
     <a href="#/categories">${icon('tag')}${t('menu.categories')}</a>
     <a href="#/theme">${icon('palette')}${t('menu.theme')}</a>
     <a href="#/birthdays">${icon('cake')}${t('menu.birthdays')}</a>
     <button class="link" data-action="share-app">${icon('share')}${t('menu.share')}</button>
     <a href="#/feedback">${icon('chat')}${t('menu.feedback')}</a>
     <a href="#/settings">${icon('gear')}${t('menu.settings')}</a>
-    <button class="link" data-action="logout">${icon('logout')}${t('menu.logout')}</button>
   </aside>`;
 }
 

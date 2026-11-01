@@ -1,14 +1,14 @@
-// Accounts + per-user data, stored in the browser's built-in database (IndexedDB).
+// Your data, stored in the browser's built-in database (IndexedDB).
 //
-// NOTE: This app runs on GitHub Pages (static hosting), so there is no server.
-// Accounts live on the user's device; passwords are never stored, only a
-// PBKDF2 hash. To sync across devices, swap the functions in this file for
-// calls to a backend (e.g. Firebase Auth + Firestore) — the rest of the app
-// only talks to the exported functions below.
+// There is no sign-in: the app keeps one personal profile on this device.
+// This app runs on GitHub Pages (static hosting), so there is no server.
+// To sync across devices later, swap the functions in this file for calls to a
+// backend (e.g. Firebase + Firestore) — the rest of the app only talks to the
+// exported functions below.
 //
-// How it works: init() loads the users and the signed-in user's data from
-// IndexedDB into memory once at startup, so screens can read synchronously.
-// Every change is written back to IndexedDB straight away.
+// How it works: init() loads the data from IndexedDB into memory once at
+// startup, so screens can read synchronously. Every change is written back to
+// IndexedDB straight away.
 
 import { uid, todayISO, addDays, addMonths } from './util.js';
 import * as db from './db.js';
@@ -28,38 +28,46 @@ export const DEFAULT_SETTINGS = {
   weekStart: 1,             // 0 Sunday, 1 Monday
   tone: 'chime',            // chime | bell | pop | none
   widgets: { week: true, month: false },
-  language: 'en',
   defaultReminder: 10,      // minutes before; -1 = no reminder
   notifications: true,
 };
 
-/* ---------- in-memory copies of what's in IndexedDB ---------- */
-let users = [];          // all accounts on this device
-let sessionId = null;    // signed-in user id
-let cache = null;        // signed-in user's data
+const LOCAL_ID = 'me';      // record key for a brand-new device
+let profileId = null;       // which userdata record this device uses
+let cache = null;           // that record's data, in memory
 
 const logErr = e => { console.error('Remind Myself database error', e); return false; };
-const putUser = u => db.put('users', u).then(() => true, logErr);
-const putSession = id => db.put('meta', { key: 'session', value: id }).then(() => true, logErr);
 
 /** Load everything needed to start. Call once before the first render. */
 export async function init() {
   await migrateFromLocalStorage();
-  users = await db.getAll('users');
-  sessionId = (await db.get('meta', 'session'))?.value || null;
-  if (sessionId && !users.some(u => u.id === sessionId)) sessionId = null;
-  if (sessionId) await loadData(sessionId);
+  profileId = (await db.get('meta', 'profileId'))?.value || null;
+  let oldUser = null;
+  if (!profileId) {
+    // Earlier versions had sign-in. Keep using whoever was signed in last
+    // (or the first account), so nobody loses their tasks.
+    const users = await db.getAll('users');
+    const sessionId = (await db.get('meta', 'session'))?.value;
+    oldUser = users.find(u => u.id === sessionId) || users[0] || null;
+    profileId = oldUser?.id || LOCAL_ID;
+    await db.put('meta', { key: 'profileId', value: profileId });
+  }
+  await loadData(profileId, oldUser?.name);
   db.requestPersistence();
+  try { localStorage.removeItem('dn.lang'); } catch {}
 }
 
-async function loadData(id) {
+async function loadData(id, fallbackName = '') {
   const rec = await db.get('userdata', id);
   const d = rec?.value || freshData();
   d.settings = { ...structuredClone(DEFAULT_SETTINGS), ...d.settings, widgets: { ...DEFAULT_SETTINGS.widgets, ...(d.settings?.widgets || {}) } };
-  d.birthdays ||= []; d.feedback ||= []; d.notified ||= {}; d.profile ||= { photo: null, slogan: '' };
+  delete d.settings.language;   // the app is English-only now
+  d.birthdays ||= []; d.feedback ||= []; d.notified ||= {};
+  d.profile = { photo: null, slogan: '', name: '', ...(d.profile || {}) };
+  if (!d.profile.name && fallbackName) d.profile.name = fallbackName;
   Object.defineProperty(d, '_id', { value: id, enumerable: false });
   cache = d;
-  if (!rec) await db.put('userdata', { userId: id, value: d });
+  if (!rec || fallbackName) await db.put('userdata', { userId: id, value: d });
 }
 
 /** Version 1.0.0 kept data in localStorage. Move it into IndexedDB once, then remove it. */
@@ -80,83 +88,32 @@ async function migrateFromLocalStorage() {
   localStorage.removeItem('dn.users'); localStorage.removeItem('dn.session');
 }
 
-/* ---------- password hashing (PBKDF2, Web Crypto) ---------- */
-const enc = new TextEncoder();
-const toHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-async function hashPassword(password, saltHex) {
-  const salt = saltHex ? Uint8Array.from(saltHex.match(/../g).map(h => parseInt(h, 16))) : crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, key, 256);
-  return { salt: toHex(salt), hash: toHex(bits) };
-}
-
-/* ---------- auth ---------- */
-const normEmail = e => String(e || '').trim().toLowerCase();
-
-export async function signUp({ name, email, password }) {
-  name = String(name || '').trim(); email = normEmail(email);
-  if (!name) throw new Error('err.name');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('err.email');
-  if (String(password).length < 6) throw new Error('err.passwordShort');
-  if (await db.getByIndex('users', 'email', email)) throw new Error('err.emailTaken');
-  const { salt, hash } = await hashPassword(password);
-  const user = { id: uid(), name, email, salt, hash, createdAt: Date.now() };
-  await db.put('users', user);            // unique email index guards against duplicates
-  users.push(user);
-  await loadData(user.id);                // creates the starter data
-  sessionId = user.id; await putSession(user.id);
-  return publicUser(user);
-}
-
-export async function signIn({ email, password }) {
-  email = normEmail(email);
-  const user = await db.getByIndex('users', 'email', email);
-  if (!user) throw new Error('err.badLogin');
-  const { hash } = await hashPassword(password, user.salt);
-  if (hash !== user.hash) throw new Error('err.badLogin');
-  if (!users.some(u => u.id === user.id)) users.push(user);
-  await loadData(user.id);
-  sessionId = user.id; await putSession(user.id);
-  return publicUser(user);
-}
-
-export async function changePassword(oldPw, newPw) {
-  const u = users.find(x => x.id === sessionId);
-  if (!u) throw new Error('err.badLogin');
-  if ((await hashPassword(oldPw, u.salt)).hash !== u.hash) throw new Error('err.badLogin');
-  if (String(newPw).length < 6) throw new Error('err.passwordShort');
-  Object.assign(u, await hashPassword(newPw)); await putUser(u);
-}
-
-export function signOut() { sessionId = null; cache = null; db.del('meta', 'session').catch(logErr); }
-
-export async function deleteAccount() {
-  const id = sessionId; if (!id) return;
-  users = users.filter(u => u.id !== id);
-  signOut();
-  await Promise.all([db.del('users', id), db.del('userdata', id)]).catch(logErr);
-}
-
-export function currentUserId() { return sessionId; }
+/* ---------- profile ---------- */
+/** The person using the app on this device. */
 export function currentUser() {
-  const u = sessionId && users.find(x => x.id === sessionId);
-  return u ? publicUser(u) : null;
+  return cache ? { id: cache._id, name: cache.profile.name || '' } : null;
 }
 export function renameUser(name) {
-  const u = users.find(x => x.id === sessionId);
-  if (u && name.trim()) { u.name = name.trim(); putUser(u); }
+  if (!cache) return;
+  cache.profile.name = String(name || '').trim().slice(0, 60); save();
 }
-const publicUser = u => ({ id: u.id, name: u.name, email: u.email, createdAt: u.createdAt });
 
-/* ---------- user data ---------- */
+/** Erase every task and setting on this device and start fresh. */
+export async function resetAll() {
+  const fresh = freshData();
+  Object.defineProperty(fresh, '_id', { value: profileId, enumerable: false });
+  cache = fresh;
+  await db.put('userdata', { userId: profileId, value: fresh }).catch(logErr);
+  listeners.forEach(fn => fn());
+}
+
+/* ---------- data ---------- */
 function freshData() {
   const today = todayISO();
   const sample = (title, category, time, repeat = 'none') => ({
     id: uid(), title, notes: '', category, date: today, time, reminder: 10, repeat,
     done: false, completedAt: null, createdAt: Date.now(),
   });
-  let language = 'en';
-  try { language = localStorage.getItem('dn.lang') || 'en'; } catch {}
   return {
     version: 1,
     tasks: [
@@ -166,8 +123,8 @@ function freshData() {
     ],
     categories: DEFAULT_CATEGORIES.map(c => ({ ...c })),
     birthdays: [],
-    profile: { photo: null, slogan: '' },
-    settings: { ...structuredClone(DEFAULT_SETTINGS), language },
+    profile: { photo: null, slogan: '', name: '' },
+    settings: structuredClone(DEFAULT_SETTINGS),
     feedback: [],
     notified: {},      // reminder keys already shown
   };
@@ -176,16 +133,17 @@ function freshData() {
 const listeners = new Set();
 export function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-export function data() { return sessionId && cache?._id === sessionId ? cache : null; }
+export function data() { return cache; }
 
-/** Write the current user's data to IndexedDB. Resolves true when saved. */
+/** Write the data to IndexedDB. Resolves true when saved. */
 export function save() {
-  const d = data(); if (!d) return Promise.resolve(false);
+  const d = cache; if (!d) return Promise.resolve(false);
   const done = db.put('userdata', { userId: d._id, value: d }).then(() => true, logErr);
   listeners.forEach(fn => fn());
   return done;
 }
-export const settings = () => data()?.settings || DEFAULT_SETTINGS;
+export const settings = () => cache?.settings || DEFAULT_SETTINGS;
+
 
 
 /* ---------- tasks ---------- */
@@ -265,9 +223,11 @@ export function exportData() {
 }
 export function importData(json) {
   const parsed = JSON.parse(json);
-  if (!parsed || !['Remind Myself', 'Remind Myself'].includes(parsed.app) || !Array.isArray(parsed.tasks)) throw new Error('err.badBackup');
+  if (!parsed || !['DayNest', 'Remind Myself'].includes(parsed.app) || !Array.isArray(parsed.tasks)) throw new Error('err.badBackup');
   const d = data();
   for (const k of ['tasks', 'categories', 'birthdays', 'profile', 'settings', 'feedback']) if (parsed[k]) d[k] = parsed[k];
+  d.profile = { photo: null, slogan: '', name: '', ...d.profile };
+  delete d.settings.language;
   save();
 }
 

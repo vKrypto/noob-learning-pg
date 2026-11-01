@@ -1,6 +1,6 @@
 // Menu pages: Categories, Theme, Feedback, Settings.
 import * as store from '../store.js';
-import { t, setLang, LANGS } from '../i18n.js';
+import { t } from '../i18n.js';
 import { esc, icon, $, toast, confirmBox, download, todayISO, fmtDate } from '../util.js';
 import { layout, catName } from '../ui.js';
 import { TONES, playTone } from '../sound.js';
@@ -133,9 +133,8 @@ export function settingsPage() {
   const body = `
   <div class="section-title"><h2>${t('set.general')}</h2></div>
   <div class="list">
-    ${row(t('set.dateFormat'), select('dateFormat', ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'D MMM YYYY'].map(f => [f, fmtDate(sample, f, s.language)]), s.dateFormat))}
+    ${row(t('set.dateFormat'), select('dateFormat', ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'D MMM YYYY'].map(f => [f, fmtDate(sample, f)]), s.dateFormat))}
     ${row(t('set.weekStart'), select('weekStart', [[1, t('set.monday')], [0, t('set.sunday')]], s.weekStart), t('set.calendarSub'))}
-    ${row(t('set.language'), select('language', LANGS.map(l => [l.code, l.name]), s.language))}
   </div>
 
   <div class="section-title"><h2>${t('set.reminders')}</h2></div>
@@ -157,8 +156,7 @@ export function settingsPage() {
   <div class="list">
     ${row(t('set.backup'), `<button class="btn sm" data-action="export">${icon('download')}</button>`, t('set.backupSub'))}
     ${row(t('set.restore'), `<label class="btn sm">${icon('upload')}<input type="file" accept="application/json,.json" id="restore" hidden></label>`)}
-    ${row(t('set.password'), `<button class="btn sm" data-action="pw">${t('edit')}</button>`)}
-    ${row(`<span style="color:var(--danger)">${t('set.deleteAccount')}</span>`, `<button class="btn sm danger" data-action="delacc">${t('delete')}</button>`)}
+    ${row(`<span style="color:var(--danger)">${t('set.reset')}</span>`, `<button class="btn sm danger" data-action="reset">${t('delete')}</button>`, t('set.resetSub'))}
   </div>
 
   <div class="section-title"><h2>${t('set.about')}</h2></div>
@@ -176,9 +174,8 @@ export function settingsPage() {
           const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
           const num = ['weekStart', 'defaultReminder'].includes(key) ? Number(val) : val;
           if (key.startsWith('widgets.')) s.widgets[key.split('.')[1]] = num; else s[key] = num;
-          if (key === 'language') setLang(val);
           store.save(); if (key === 'tone') playTone(val);
-          if (['language', 'dateFormat'].includes(key)) rerender();
+          if (key === 'dateFormat') rerender();
           toast(t('saved'));
         }
         if (e.target.id === 'restore' && e.target.files[0]) {
@@ -196,29 +193,9 @@ export function settingsPage() {
           if (p) { p.prompt(); window.__installPrompt = null; } else toast(t('set.installHint'));
         }
         if (a === 'update') checkForUpdate(true);
-        if (a === 'pw') passwordDialog();
-        if (a === 'delacc' && await confirmBox(t('set.confirmDelete'), t('delete'), t('cancel'))) { await store.deleteAccount(); location.hash = '#/signin'; }
+        if (a === 'reset' && await confirmBox(t('set.confirmReset'), t('delete'), t('cancel'))) { await store.resetAll(); toast(t('set.resetDone')); location.hash = '#/home'; }
       });
     },
   };
 }
 
-function passwordDialog() {
-  const dlg = document.createElement('dialog');
-  dlg.innerHTML = `<form class="card stack" method="dialog">
-    <h3>${t('set.password')}</h3>
-    <label class="field"><span>${t('set.oldPw')}</span><input class="input" type="password" name="old" required autocomplete="current-password"></label>
-    <label class="field"><span>${t('auth.passwordNew')}</span><input class="input" type="password" name="pw" required minlength="6" autocomplete="new-password"></label>
-    <p class="error" role="alert"></p>
-    <div class="row"><span class="spacer"></span><button class="btn" value="cancel" formnovalidate>${t('cancel')}</button><button class="btn primary" value="ok">${t('save')}</button></div>
-  </form>`;
-  document.body.appendChild(dlg); dlg.showModal();
-  const form = dlg.querySelector('form');
-  form.addEventListener('submit', async e => {
-    if (e.submitter?.value === 'cancel') { dlg.remove(); return; }
-    e.preventDefault();
-    try { await store.changePassword(form.old.value, form.pw.value); dlg.close(); dlg.remove(); toast(t('saved')); }
-    catch (ex) { form.querySelector('.error').textContent = t(ex.message); }
-  });
-  dlg.addEventListener('close', () => dlg.remove());
-}

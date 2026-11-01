@@ -51,7 +51,7 @@ export default function home() {
     ${ring(pct)}
     <div style="min-width:0">
       <div class="muted small">${greeting()},</div>
-      <h2 style="font-size:1.4rem">${esc(u.name.split(' ')[0])}</h2>
+      <h2 style="font-size:1.4rem">${u.name ? esc(u.name.split(' ')[0]) : `<a href="#/profile" style="color:inherit">${t('home.addName')}</a>`}</h2>
       <div class="small muted">${todays.length ? t('home.progress', { done, total: todays.length }) : t('home.nothingToday')}</div>
       ${d.profile.slogan ? `<div class="small" style="margin-top:4px;font-style:italic">“${esc(d.profile.slogan)}”</div>` : ''}
     </div>
@@ -64,7 +64,7 @@ export default function home() {
       <div style="flex:1">🎂 ${b.days === 0 ? t('bday.todayTitle', { name: b.name }) : t('bday.soon', { name: b.name })}</div></a>`).join('')}
 
   <div class="card" style="margin-top:12px">
-    <blockquote class="quote" style="margin:0">${esc(lang() === 'hi' ? q.hi : q.en)}<footer>— ${esc(q.by)}</footer></blockquote>
+    <blockquote class="quote" style="margin:0">${esc(q.text)}<footer>— ${esc(q.by)}</footer></blockquote>
     <div class="row" style="margin-top:10px"><span class="small muted">${t('home.quoteLabel')}</span><span class="spacer"></span>
       <button class="btn sm" data-action="quote">${icon('refresh')}${t('home.newQuote')}</button></div>
   </div>
