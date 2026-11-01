@@ -5,6 +5,8 @@ It's a Progressive Web App (PWA): it runs in any browser, can be installed on a 
 
 **Live:** deployed automatically to GitHub Pages on every push to `main` (see `.github/workflows/pages.yml`).
 
+> **Also in this repo:** [Flashcard Coach](flashcards/) — make flashcards, study with spaced repetition and quiz yourself. Live at https://vkrypto.github.io/noob-learning-pg/flashcards/
+
 ## Features
 
 | Area | What's included |

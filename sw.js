@@ -1,6 +1,6 @@
 // Remind Myself service worker: offline support + notification clicks.
 // Bump CACHE when you release a new version (keep in sync with VERSION in js/pwa.js).
-const CACHE = 'remind-myself-v1.4.0';
+const CACHE = 'remind-myself-v1.4.1';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/util.js', './js/store.js', './js/i18n.js', './js/ui.js', './js/sound.js', './js/quotes.js',
@@ -17,7 +17,8 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const key of await caches.keys()) if (key !== CACHE) await caches.delete(key);
+    // Only remove this app's old caches — other apps on the same site (flashcards/) keep theirs.
+    for (const key of await caches.keys()) if (key !== CACHE && /^(remind-myself|daynest)-/.test(key)) await caches.delete(key);
     await self.clients.claim();
   })());
 });
